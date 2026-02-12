@@ -38,7 +38,7 @@ export const createProduct = async (req, res) => {
     const allowedType = ['.png', '.jpg', '.jpeg'];
 
     if (!allowedType.includes(ext.toLowerCase())) return res.status(422).json({ msg: "Invalid Images" });
-    if (fileSize > 5000000) return res.status(422).json({ msg: "Image must be less than 5 MB" });
+    if (fileSize > 10000000) return res.status(422).json({ msg: "Image must be less than 10 MB" });
 
     file.mv(`./public/images/${fileName}`, async (err) => {
         if (err) return res.status(500).json({ msg: err.message });
@@ -78,7 +78,7 @@ export const updateProduct = async (req, res) => {
         const allowedType = ['.png', '.jpg', '.jpeg'];
 
         if (!allowedType.includes(ext.toLowerCase())) return res.status(422).json({ msg: "Invalid Images" });
-        if (fileSize > 5000000) return res.status(422).json({ msg: "Image must be less than 5 MB" });
+        if (fileSize > 10000000) return res.status(422).json({ msg: "Image must be less than 10 MB" });
 
         // Hapus file lama (fs.unlink)
         const filepath = `./public/images/${product.image}`;

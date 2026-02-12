@@ -16,6 +16,17 @@ export default function ProductsPage() {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // ====== STATE BARU UNTUK EDIT ======
+  const [editId, setEditId] = useState(null); // UUID produk yang sedang diedit
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editFile, setEditFile] = useState(null);
+  const [editPreview, setEditPreview] = useState("");
+  const [editError, setEditError] = useState("");
+  const [isEditLoading, setIsEditLoading] = useState(false);
+  // ===================================
+
   const getProducts = async () => {
     try {
       setIsFetching(true);
@@ -42,6 +53,16 @@ export default function ProductsPage() {
     }
   };
 
+  // ====== FUNGSI LOAD IMAGE UNTUK EDIT ======
+  const loadEditImage = (e) => {
+    const image = e.target.files[0];
+    if (image) {
+      setEditFile(image);
+      setEditPreview(URL.createObjectURL(image));
+    }
+  };
+  // ==========================================
+
   const saveProduct = async (e) => {
     e.preventDefault();
     setError("");
@@ -56,15 +77,12 @@ export default function ProductsPage() {
       await axios.post("/products", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      // Reset Form
       setName("");
       setPrice("");
       setDescription("");
       setFile(null);
       setPreview("");
-      // Tutup Modal
       document.getElementById("modal_add_product").close();
-      // Refresh Data
       getProducts();
     } catch (error) {
       console.error("Error saving product:", error);
@@ -73,6 +91,62 @@ export default function ProductsPage() {
       setIsLoading(false);
     }
   };
+
+  // ====== FUNGSI BUKA MODAL EDIT (isi form dengan data produk) ======
+  const openEditModal = (product) => {
+    setEditId(product.uuid);
+    setEditName(product.name);
+    setEditPrice(product.price);
+    setEditDescription(product.description || "");
+    setEditFile(null);
+    setEditPreview(product.url); // Tampilkan gambar lama sebagai preview
+    setEditError("");
+    document.getElementById("modal_edit_product").showModal();
+  };
+  // ==================================================================
+
+  // ====== FUNGSI RESET & TUTUP MODAL EDIT ======
+  const closeEditModal = () => {
+    document.getElementById("modal_edit_product").close();
+    setEditId(null);
+    setEditName("");
+    setEditPrice("");
+    setEditDescription("");
+    setEditFile(null);
+    setEditPreview("");
+    setEditError("");
+  };
+  // ==============================================
+
+  // ====== FUNGSI UPDATE PRODUK ======
+  const updateProduct = async (e) => {
+    e.preventDefault();
+    setEditError("");
+
+    const formData = new FormData();
+    formData.append("name", editName);
+    formData.append("price", editPrice);
+    formData.append("description", editDescription);
+    // Hanya append file jika user memilih gambar baru
+    if (editFile) {
+      formData.append("file", editFile);
+    }
+
+    try {
+      setIsEditLoading(true);
+      await axios.patch(`/products/${editId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      closeEditModal();
+      getProducts(); // Refresh data
+    } catch (error) {
+      console.error("Error updating product:", error);
+      setEditError(error.response?.data?.msg || "Gagal mengupdate produk");
+    } finally {
+      setIsEditLoading(false);
+    }
+  };
+  // ==================================
 
   const deleteProduct = async (uuid) => {
     if (!confirm("Yakin ingin menghapus produk ini?")) return;
@@ -251,9 +325,10 @@ export default function ProductsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {/* ====== TOMBOL EDIT YANG SUDAH AKTIF ====== */}
                   <button
                     className="btn btn-sm btn-outline flex-1 rounded-xl"
-                    disabled>
+                    onClick={() => openEditModal(product)}>
                     <svg
                       className="w-4 h-4 mr-1"
                       fill="none"
@@ -268,6 +343,7 @@ export default function ProductsPage() {
                     </svg>
                     Edit
                   </button>
+                  {/* =========================================== */}
                   <button
                     onClick={() => deleteProduct(product.uuid)}
                     className="btn btn-sm btn-error flex-1 rounded-xl text-white">
@@ -292,7 +368,7 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* MODAL TAMBAH PRODUK */}
+      {/* ================ MODAL TAMBAH PRODUK ================ */}
       <dialog id="modal_add_product" className="modal">
         <div className="modal-box max-w-2xl rounded-2xl">
           <form method="dialog">
@@ -322,7 +398,6 @@ export default function ProductsPage() {
                 required
               />
             </div>
-
             <div>
               <label className="label">
                 <span className="label-text font-semibold">Harga (Rp)</span>
@@ -337,7 +412,6 @@ export default function ProductsPage() {
                 min="0"
               />
             </div>
-
             <div>
               <label className="label">
                 <span className="label-text font-semibold">Deskripsi</span>
@@ -348,7 +422,6 @@ export default function ProductsPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}></textarea>
             </div>
-
             <div>
               <label className="label">
                 <span className="label-text font-semibold">Foto Produk</span>
@@ -365,7 +438,6 @@ export default function ProductsPage() {
                 </span>
               </label>
             </div>
-
             {preview && (
               <div className="flex justify-center">
                 <div className="relative">
@@ -386,7 +458,6 @@ export default function ProductsPage() {
                 </div>
               </div>
             )}
-
             <div className="modal-action mt-6">
               <button
                 type="button"
@@ -436,6 +507,164 @@ export default function ProductsPage() {
           <button>close</button>
         </form>
       </dialog>
+
+      {/* ================ MODAL EDIT PRODUK (BARU) ================ */}
+      <dialog id="modal_edit_product" className="modal">
+        <div className="modal-box max-w-2xl rounded-2xl">
+          <form method="dialog">
+            <button
+              className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              onClick={closeEditModal}>
+              ✕
+            </button>
+          </form>
+          <h3 className="text-2xl font-bold mb-6 text-gray-900">
+            Edit Produk
+          </h3>
+          {editError && (
+            <div className="alert alert-error mb-4 rounded-xl">
+              <span className="text-sm">{editError}</span>
+            </div>
+          )}
+          <form onSubmit={updateProduct} className="space-y-4">
+            <div>
+              <label className="label">
+                <span className="label-text font-semibold">Nama Produk</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Contoh: Gula Aren Granule 1kg"
+                className="input input-bordered w-full rounded-xl"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="label">
+                <span className="label-text font-semibold">Harga (Rp)</span>
+              </label>
+              <input
+                type="number"
+                placeholder="50000"
+                className="input input-bordered w-full rounded-xl"
+                value={editPrice}
+                onChange={(e) => setEditPrice(e.target.value)}
+                required
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label className="label">
+                <span className="label-text font-semibold">Deskripsi</span>
+              </label>
+              <textarea
+                className="textarea textarea-bordered w-full rounded-xl min-h-24"
+                placeholder="Deskripsi produk (ukuran, berat, dll)"
+                value={editDescription}
+                onChange={(e) =>
+                  setEditDescription(e.target.value)
+                }></textarea>
+            </div>
+
+            <div>
+              <label className="label">
+                <span className="label-text font-semibold">Foto Produk</span>
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="file-input file-input-bordered w-full rounded-xl"
+                onChange={loadEditImage}
+              />
+              <label className="label">
+                <span className="label-text-alt text-gray-500">
+                  Kosongkan jika tidak ingin mengganti gambar. Format: JPG, PNG
+                  (Maks. 10MB)
+                </span>
+              </label>
+            </div>
+
+            {/* Preview gambar (lama atau baru) */}
+            {editPreview && (
+              <div className="flex justify-center">
+                <div className="relative">
+                  <img
+                    src={editPreview}
+                    alt="Preview"
+                    className="w-48 h-48 object-cover rounded-xl shadow-lg border-2 border-blue-200"
+                  />
+                  {editFile && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditPreview(
+                          products.find((p) => p.uuid === editId)?.url || ""
+                        );
+                        setEditFile(null);
+                      }}
+                      className="absolute top-2 right-2 btn btn-sm btn-circle btn-error">
+                      ✕
+                    </button>
+                  )}
+                  {!editFile && (
+                    <span className="absolute bottom-2 left-2 badge badge-info text-xs">
+                      Gambar saat ini
+                    </span>
+                  )}
+                  {editFile && (
+                    <span className="absolute bottom-2 left-2 badge badge-success text-xs">
+                      Gambar baru
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="modal-action mt-6">
+              <button
+                type="button"
+                className="btn btn-outline rounded-xl"
+                onClick={closeEditModal}>
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="btn bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-none rounded-xl"
+                disabled={isEditLoading}>
+                {isEditLoading ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Mengupdate...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Update Produk
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={closeEditModal}>close</button>
+        </form>
+      </dialog>
+      {/* ========================================================= */}
     </div>
   );
 }

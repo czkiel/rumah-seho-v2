@@ -20,11 +20,9 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold text-orange-900 tracking-wide group-hover:text-orange-700 transition-colors">
-                Rumah Seho
+                Rumah Seho Nusantara
               </span>
-              <span className="text-xs text-gray-500 hidden sm:block font-medium">
-                Nusantara
-              </span>
+              
             </div>
           </Link>
         </div>
