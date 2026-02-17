@@ -61,33 +61,45 @@ export default function Sidebar() {
         </svg>
       ),
     },
+    {
+      href: "/dashboard/sales/create",
+      label: "Buat Invoice Manual",
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
   ];
 
   return (
-    <div className="drawer lg:drawer-open z-20">
+    <div className="drawer lg:drawer-open z-20 font-sans">
       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
       <div className="drawer-side">
         <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
-        <aside className="w-80 min-h-full bg-linear-to-b from-orange-600 to-orange-700 text-white">
+        {/* Aesthetic Dark Green Gradient Background */}
+        <aside className="w-80 min-h-full bg-linear-to-b from-emerald-800 to-emerald-950 text-white shadow-2xl">
           {/* Header */}
-          <div className="p-6 border-b border-orange-500/30">
+          <div className="p-6 border-b border-emerald-700/50">
             <div className="flex items-center gap-3 mb-4">
-              <img
-                src="/logo.png"
-                alt="Rumah Seho Logo"
-                className="w-12 h-12 object-contain"
-              />
+              <div className="bg-white p-1 rounded-xl">
+                 <img
+                   src="/logo-admin.png"
+                   alt="Rumah Seho Logo"
+                   className="w-10 h-10 object-contain"
+                 />
+              </div>
               <div>
-                <h2 className="text-xl font-bold">Admin Panel</h2>
-                <p className="text-xs text-orange-100">Rumah Seho Nusantara</p>
+                <h2 className="text-xl font-bold tracking-wide">Admin Panel</h2>
+                <p className="text-xs text-emerald-200/80 uppercase tracking-widest">Rumah Seho Nusantara</p>
               </div>
             </div>
             {userName && (
-              <div className="flex items-center gap-2 text-sm text-orange-100">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-2 text-sm text-emerald-100 bg-emerald-900/50 p-2 rounded-lg">
+                <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span>{userName}</span>
+                <span className="font-medium">{userName}</span>
               </div>
             )}
           </div>
@@ -100,10 +112,10 @@ export default function Sidebar() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 rounded-xl transition-all ${
+                    className={`flex items-center gap-3 rounded-xl transition-all duration-300 ${
                       isActive
-                        ? "bg-white text-orange-600 font-semibold shadow-lg"
-                        : "text-orange-100 hover:bg-orange-500/50 hover:text-white"
+                        ? "bg-emerald-50 text-emerald-900 font-bold shadow-lg shadow-emerald-900/20"
+                        : "text-emerald-100 hover:bg-emerald-700/50 hover:text-white"
                     }`}
                   >
                     {item.icon}
@@ -113,7 +125,7 @@ export default function Sidebar() {
               );
             })}
 
-            <div className="divider my-4 border-orange-500/30"></div>
+            <div className="divider my-4 border-emerald-700/30"></div>
 
             {/* Logout Button */}
             <li>
@@ -130,8 +142,8 @@ export default function Sidebar() {
           </ul>
 
           {/* Footer */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-orange-500/30">
-            <p className="text-xs text-orange-200 text-center">
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-emerald-700/50">
+            <p className="text-xs text-emerald-400 text-center tracking-wider">
               © {new Date().getFullYear()} Rumah Seho Nusantara
             </p>
           </div>

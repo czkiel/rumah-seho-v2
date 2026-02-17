@@ -3,7 +3,7 @@ import Sidebar from "../../components/Sidebar";
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="flex min-h-screen bg-linear-to-br from-gray-50 to-orange-50">
+    <div className="flex min-h-screen bg-stone-50 font-sans text-stone-800">
       {/* Sidebar (Fixed di kiri desktop, hidden di mobile) */}
       <div className="w-0 lg:w-80">
         <Sidebar />
@@ -14,7 +14,7 @@ export default function DashboardLayout({ children }) {
         {/* Tombol menu untuk mobile (Hamburger) */}
         <label
           htmlFor="my-drawer-2"
-          className="btn bg-linear-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white border-none drawer-button lg:hidden mb-4 rounded-xl shadow-lg">
+          className="btn bg-linear-to-r from-emerald-700 to-emerald-900 hover:from-emerald-800 hover:to-emerald-950 text-white border-none drawer-button lg:hidden mb-4 rounded-xl shadow-lg">
           <svg
             className="w-5 h-5"
             fill="none"
@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }) {
               d="M4 6h16M4 12h16M4 18h16"
             />
           </svg>
-          Menu
+          Menu Admin
         </label>
 
         {children}

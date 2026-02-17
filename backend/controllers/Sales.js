@@ -46,11 +46,11 @@ export const getSaleById = async (req, res) => {
             },
             include: [
                 {
-                    model: Users, // Data Customer (Utk: "Tagihan Kepada")
+                    model: Users, 
                     attributes: ['name', 'address', 'phone', 'email'] 
                 },
                 {
-                    model: SaleItems, // Data Barang (Utk: Tabel Produk)
+                    model: SaleItems, 
                     include: [{
                         model: Products,
                         attributes: ['name', 'description']
@@ -61,8 +61,9 @@ export const getSaleById = async (req, res) => {
 
         if(!sale) return res.status(404).json({msg: "Transaksi tidak ditemukan"});
 
-        // Validasi akses: Cuma Admin atau Pemilik Transaksi yang boleh lihat
-        if(req.role !== "admin" && sale.userId !== req.userId){
+        // Validasi akses (Admin or Owner)
+        // Jika userId null (manual invoice), hanya admin yang boleh lihat
+        if(req.role !== "admin" && sale.userId && sale.userId !== req.userId){
             return res.status(403).json({msg: "Akses terlarang"});
         }
 
@@ -139,6 +140,100 @@ export const createSale = async (req, res) => {
 
     } catch (error) {
         await t.rollback(); // Batalkan semua jika ada error
+        res.status(500).json({msg: error.message});
+    }
+}
+export const createManualSale = async (req, res) => {
+    // Menangkap semua input dari frontend, termasuk custom invoice number dan tanggal
+    const { 
+        items, 
+        invoice_number, 
+        transaction_date, 
+        due_date, 
+        customer_name, 
+        customer_address, 
+        customer_phone, 
+        description 
+    } = req.body;
+    
+    // Validasi akses admin
+    if(req.role !== "admin") return res.status(403).json({msg: "Hanya admin yang dapat membuat invoice manual"});
+
+    const t = await db.transaction();
+
+    try {
+        let totalPrice = 0;
+        const saleItemsData = [];
+
+        // 1. Loop items 
+        for (const item of items) {
+            const product = await Products.findOne({ where: { id: item.productId } });
+            if (!product) {
+                await t.rollback(); 
+                return res.status(404).json({msg: `Product ID ${item.productId} tidak ditemukan`});
+            }
+
+            // Gunakan harga custom dari admin jika diubah, jika tidak pakai harga asli DB
+            const finalPrice = item.price !== undefined && item.price !== "" ? Number(item.price) : product.price;
+            const subtotal = finalPrice * item.qty;
+            totalPrice += subtotal;
+
+            saleItemsData.push({
+                productId: product.id,
+                qty: item.qty,
+                price_at_purchase: finalPrice, // Simpan harga custom/asli
+                subtotal: subtotal
+            });
+        }
+
+        // 2. Logic Nomor Invoice & Tanggal
+        const tDate = transaction_date ? new Date(transaction_date) : new Date();
+        const month = String(tDate.getMonth() + 1).padStart(2, '0');
+        const year = String(tDate.getFullYear()).slice(-2);
+        
+        // Jika admin tidak isi nomor invoice, kita auto-generate
+        const autoInvoiceNumber = `INV/M/${month}${year}/${Date.now().toString().slice(-4)}`;
+        const finalInvoiceNumber = invoice_number && invoice_number.trim() !== "" ? invoice_number : autoInvoiceNumber;
+
+        // Jika admin tidak isi jatuh tempo, set default H+7 dari tanggal transaksi
+        const dDate = new Date(tDate);
+        const finalDueDate = due_date ? new Date(due_date) : new Date(dDate.setDate(dDate.getDate() + 7));
+
+        // 3. Create Sale Record dengan semua data custom
+        const newSale = await Sales.create({
+            invoice_number: finalInvoiceNumber,
+            transaction_date: tDate,
+            total_price: totalPrice,
+            userId: req.userId, // Admin yang membuat
+            customer_name: customer_name || null,
+            customer_address: customer_address || null,
+            customer_phone: customer_phone || null,
+            description: description || null,
+            due_date: finalDueDate,
+            status: 'pending'
+        }, { transaction: t });
+
+        // 4. Create Sale Items
+        const finalSaleItems = saleItemsData.map(item => ({
+            ...item,
+            saleId: newSale.id
+        }));
+
+        await SaleItems.bulkCreate(finalSaleItems, { transaction: t });
+
+        await t.commit();
+
+        res.status(201).json({
+            msg: "Invoice Manual Berhasil Dibuat!", 
+            saleId: newSale.uuid 
+        });
+
+    } catch (error) {
+        await t.rollback();
+        // Cek jika error karena nomor invoice duplikat
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({msg: "Nomor Invoice sudah digunakan, silakan ganti yang lain."});
+        }
         res.status(500).json({msg: error.message});
     }
 }

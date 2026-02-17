@@ -34,11 +34,27 @@ const Sales = db.define('sales', {
     },
     userId: { // Foreign Key (Siapa yang beli)
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
             model: Users,
             key: 'id'
         }
+    },
+    customer_name: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    customer_address: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    customer_phone: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    description: { // Pengganti info pembayaran default
+        type: DataTypes.TEXT,
+        allowNull: true
     }
 }, {
     freezeTableName: true
